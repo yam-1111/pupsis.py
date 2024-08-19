@@ -1,6 +1,6 @@
 
 from selectolax.lexbor import LexborHTMLParser
-from pupsis.logs import Logger
+from pupsis.utils.logs import Logger
 import re
 
 
@@ -36,8 +36,8 @@ class Grade:
 
     @property
     def parse(self):
-        """
-        extracts the data from the html string texts and stores on the lists
+        """extracts the data from the html string 
+        texts and stores on the lists
 
         ------
         Returns:
@@ -81,11 +81,11 @@ class Grade:
 
     @property
     def convert_to_dict(self):
-        """
-        merges all the array and return into dictionary
+        """merges all the array and return into dictionary
 
         ------
-        Returns : list(dicts(combined_data))
+        Returns : 
+            list : (dicts(combined_data))
         """
         combined_data = []
         combined_data = self.header.copy()

@@ -1,4 +1,4 @@
-from pupsis.logs import Logger
+from pupsis.utils.logs import Logger
 
 
 class pupSIS:

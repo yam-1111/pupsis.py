@@ -1,5 +1,5 @@
 from selectolax.lexbor import LexborHTMLParser
-from pupsis.logs import Logger
+from pupsis.utils.logs import Logger
 
 class Status:
     def __init__(self, html_data : str):

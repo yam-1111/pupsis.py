@@ -10,8 +10,9 @@ user = pupSIS(
 
 grades = user.grades().latest()
 
+print('grades complete? ' , user.grades().is_complete())
 for x in grades.grades:
-    print(x['Subject_Code'], x['Final_Grade'])
+    print(x['Subject_Code'], x['Final_Grade'], x['Faculty_Name'])
 
 
 

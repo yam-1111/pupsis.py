@@ -1,5 +1,5 @@
 from tls_client import Session
-from pupsis.logs import Logger
+from pupsis.utils.logs import Logger
 from selectolax.lexbor import LexborHTMLParser
 from typing import List, Dict, Optional, Required
 import logging
