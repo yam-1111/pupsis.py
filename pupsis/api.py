@@ -1,9 +1,9 @@
 import hishel
-import logging
 from selectolax.lexbor import LexborHTMLParser
 from pupsis.utils.logs import Logger
 from pupsis.errors import LoginError, MultipleLoginAttempt
 from typing import Optional
+import httpx
 
 
 # cache controllers
@@ -31,12 +31,42 @@ class APIRequester:
         self.student_birthdate = student_birthdate.split("/")
         self.password = password
         self.logger = Logger("APIRequester", log_file=logfile, level=loglevel)
-        self.base_url = "https://sis8.pup.edu.ph/student/"
+        self.urls = [
+            "https://sis8.pup.edu.ph/student/",
+            "https://sis1.pup.edu.ph/student/",
+            "https://sis2.pup.edu.ph/student/",
+        ]
         self.client = hishel.CacheClient(controller=controller, storage=storage)
+
+    def __client(self, method: str, endpoint: str, data: Optional[dict] = None):
+        """
+        Helper method for making GET or POST requests with retry logic for multiple SIS URLs using hishel.
+        Args:
+            method (str): HTTP method ('GET' or 'POST').
+            endpoint (str): The endpoint to request.
+            data (dict, optional): Data for POST requests.
+        Returns:
+            response: The response object if successful.
+        """
+        for url in self.urls:
+            try:
+                full_url = url + endpoint
+                self.logger.debug(f"Making {method} request to {full_url}")
+                if method == 'GET':
+                    response = self.client.get(full_url)
+                elif method == 'POST':
+                    response = self.client.post(full_url, data=data)
+                response.raise_for_status()  # Raises exception for non-2xx responses
+                return response
+            except (httpx.RequestError, httpx.TimeoutException) as e:
+                self.logger.warning(f"Failed to make {method} request to {url}: {e}")
+                continue  # Try the next URL
+        self.logger.error(f"Failed to make {method} request to all available SIS URLs.")
+        raise LoginError(f"Request failed after trying all SIS URLs.")
 
     def __get_csrf_token(self):
         self.logger.info("Extracting CSRF token")
-        response = self.client.get(self.base_url)
+        response = self.__client('GET', "")
         tree = LexborHTMLParser(response.text)
         csrf = [tree.css_first(selector).attrs["value"] for selector in ["input[name='csrf_token']", "input#tempcsrf"]]
         self.logger.debug(f"CSRF token extracted: {csrf}")
@@ -56,23 +86,18 @@ class APIRequester:
             "password": self.password,
             "Login": "Sign in",
         }
-        response = self.client.post(self.base_url, data=payload)
-        
-        if response.status_code == 200:
-            refresh_header = response.headers.get("Refresh")
-            if refresh_header == '0;url=https://sis8.pup.edu.ph/student/authentication/lockaccount':
-                raise MultipleLoginAttempt()
-            if refresh_header == '0;url=https://sis8.pup.edu.ph/student/':
-                self.logger.error(f"Failed to login: {response.status_code}")
-                raise LoginError("Incorrect login credentials")
-            self.logger.info("Login successful")
-        else:
+        response = self.__client('POST', "", data=payload)
+        refresh_header = response.headers.get("Refresh")
+        if refresh_header == '0;url=https://sis8.pup.edu.ph/student/authentication/lockaccount':
+            raise MultipleLoginAttempt()
+        if refresh_header == '0;url=https://sis8.pup.edu.ph/student/':
             self.logger.error(f"Failed to login: {response.status_code}")
-            raise LoginError("Login failed")
+            raise LoginError("Incorrect login credentials")
+        self.logger.info("Login successful")
 
     def get_grades(self):
         self.__login()
-        response = self.client.get(self.base_url + "grades")
+        response = self.__client('GET', "grades")
         if response.status_code == 200:
             return response.text
         self.logger.error(f"Failed to fetch grades: {response.status_code}")
@@ -80,7 +105,7 @@ class APIRequester:
 
     def get_schedule(self, save_html: Optional[bool] = False):
         self.__login()
-        response = self.client.get(self.base_url + "schedule")
+        response = self.__client('GET', "schedule")
         if response.status_code == 200:
             return response.text
         self.logger.error(f"Failed to fetch schedule: {response.status_code}")
