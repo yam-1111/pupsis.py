@@ -25,3 +25,10 @@ class MultipleLoginAttempt(Exception):
     def __init__(self):
         self.message = "Maximum log in attempts exceeded. Please log in again after 60min/s."
         super().__init__(self.message)
+
+class SurveyError(Exception):
+    """Exception raised when the user has not completed the survey.
+    """
+    def __init__(self):
+        self.message = "Please complete the survey first."
+        super().__init__(self.message)

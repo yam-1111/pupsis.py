@@ -16,7 +16,7 @@ def main():
         student_birthdate=getenv("STUDENT_BIRTHDAY"),
         # pupsis student password
         password= getenv("PASSWORD"),
-        # set logging level details i.e None, DEBUG, INFO, WARNING, ERROR
+        # set logging level details i.e None, "DEBUG", "INFO", "WARNING", "ERROR"
         # default = None
         loglevel="DEBUG"
     )
