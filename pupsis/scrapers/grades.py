@@ -3,20 +3,27 @@ from pupsis.utils.logs import Logger
 import re
 
 
-class GradesWrapper:
-    """Wraps the dictionary into attributes.
-
-    Attributes:
-        **kwargs: Dictionary values.
-
-    Returns:
-        object: An object with attributes corresponding to the dictionary keys.
-    """
+class GradeEntry:
+    """Wraps a grade entry dictionary into an object with attribute access."""
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
-    
+
+    def __repr__(self):
+        return f"<{self.Subject_Code}>"
+
+class GradesWrapper:
+    """Wraps the dictionary into attributes, including grades as objects."""
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            if key == "grades" and isinstance(value, list):
+                # Convert each dict to GradeEntry
+                self.grades = [GradeEntry(**grade) for grade in value]  
+            else:
+                setattr(self, key, value)
+
     def __repr__(self):
         return f"<{self.Semester} term {self.Academic_Year}>"
+
 
 
 class Grade:
