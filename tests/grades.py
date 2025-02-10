@@ -16,7 +16,7 @@ pupsis = PUPSIS(
     password= getenv("PASSWORD"),
     # set logging level details i.e None, "DEBUG", "INFO", "WARNING", "ERROR"
     # default = None
-    loglevel=None
+    loglevel="INFO"
 )
 latest_grades = pupsis.grades().latest()
 

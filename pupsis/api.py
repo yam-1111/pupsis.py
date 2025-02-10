@@ -41,26 +41,31 @@ class APIRequester:
     def __client(self, method: str, endpoint: str, data: Optional[dict] = None):
         """
         Helper method for making GET or POST requests with retry logic for multiple SIS URLs using hishel.
-        Args:
-            method (str): HTTP method ('GET' or 'POST').
-            endpoint (str): The endpoint to request.
-            data (dict, optional): Data for POST requests.
-        Returns:
-            response: The response object if successful.
         """
+        timeout = 100.0  # Set timeout to 100 seconds
+
         for url in self.urls:
             try:
                 full_url = url + endpoint
-                self.logger.debug(f"Making {method} request to {full_url}")
+                self.logger.debug(f"Making {method} request to {full_url} with timeout {timeout}s")
+
                 if method == 'GET':
-                    response = self.client.get(full_url)
+                    response = self.client.get(full_url, timeout=timeout)
                 elif method == 'POST':
-                    response = self.client.post(full_url, data=data)
+                    response = self.client.post(full_url, data=data, timeout=timeout)
+
+                elapsed_time = response.elapsed.total_seconds()
+                if elapsed_time > 80:
+                    self.logger.warning(f"Request to {full_url} took {elapsed_time}s, nearing timeout limit!")
+
                 response.raise_for_status()  # Raises exception for non-2xx responses
                 return response
-            except (httpx.RequestError, httpx.TimeoutException) as e:
+            except httpx.TimeoutException:
+                self.logger.error(f"Request to {full_url} timed out after {timeout}s.")
+            except httpx.RequestError as e:
                 self.logger.warning(f"Failed to make {method} request to {url}: {e}")
                 continue  # Try the next URL
+
         self.logger.error(f"Failed to make {method} request to all available SIS URLs.")
         raise LoginError(f"Request failed after trying all SIS URLs.")
 
