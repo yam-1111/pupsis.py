@@ -8,7 +8,8 @@ import httpx
 
 # cache controllers
 controller = hishel.Controller(
-    allow_heuristics=True
+    allow_heuristics=True,
+    force_cache=True,
 )
 
 storage = hishel.FileStorage(
@@ -53,6 +54,7 @@ class APIRequester:
                     response = self.client.get(full_url, timeout=timeout)
                 elif method == 'POST':
                     response = self.client.post(full_url, data=data, timeout=timeout)
+                self.logger.debug(f"Response headers: {response.headers}")
 
                 elapsed_time = response.elapsed.total_seconds()
                 if elapsed_time > 80:
@@ -64,7 +66,7 @@ class APIRequester:
                 self.logger.error(f"Request to {full_url} timed out after {timeout}s.")
             except httpx.RequestError as e:
                 self.logger.warning(f"Failed to make {method} request to {url}: {e}")
-                continue  # Try the next URL
+                continue  
 
         self.logger.error(f"Failed to make {method} request to all available SIS URLs.")
         raise LoginError(f"Request failed after trying all SIS URLs.")
