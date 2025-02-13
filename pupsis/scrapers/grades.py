@@ -31,6 +31,11 @@ class Grade:
 
     Attributes:
         html_data (str): The HTML data as a string.
+
+    Returns:
+        latest(): Returns the latest semester grades.
+        all(): Returns all semester grades.
+
     """
     def __init__(self, html_data: str):
         self.html_data = html_data
@@ -115,7 +120,7 @@ class Grade:
         """Retrieves the latest academic semester grades.
 
         Returns:
-            object: An object representing the latest semester's grades.
+            GradesWrapper: An instance of the GradesWrapper class containing the latest semester grades
         """
         return GradesWrapper(**self.convert_to_dict[0])
     

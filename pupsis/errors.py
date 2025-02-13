@@ -32,3 +32,20 @@ class SurveyError(Exception):
     def __init__(self):
         self.message = "Please complete the survey first."
         super().__init__(self.message)
+
+
+class InvalidStudentNumber(Exception):
+    """Exception raised when the student number is invalid.
+    """
+    def __init__(self, value):
+        self.message = "InvalidStudentNumber: {value} (Expected format: 20XX-xxxxxx-XX-x)"
+        super().__init__(self.message)
+
+class InvalidBirthdate(Exception):
+    """Exception raised when the birthdate is invalid.
+    """
+    def __init__(self, value):
+        self.message = "InvalidBirthdate: {value} (Expected format: M/DD/YYYY)"
+        super().__init__(self.message)
+
+

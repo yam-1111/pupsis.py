@@ -16,7 +16,7 @@ setup(
         ],
     },
     author="yam-1111",
-    description="unofficial python api wrapper for PUP SIS",
+    description="unofficial python api wrapper for PUPSIS",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/yam-1111/pupsis.py",
