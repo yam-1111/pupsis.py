@@ -1,5 +1,7 @@
 # pupsis.py
 
+[![Hippocratic License HL3-CL](https://img.shields.io/static/v1?label=Hippocratic%20License&message=HL3-CL&labelColor=5e2751&color=bc8c3d)](https://firstdonoharm.dev/version/3/0/cl.html)
+
 Unofficial Python API for the PUP Student Information System (PUPSIS).
 
 ⚠️ This project is **not affiliated with, endorsed by, or officially supported by PUP**. It is an independent tool designed to help students automate checking of grades and schedule.  
