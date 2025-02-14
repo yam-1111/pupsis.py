@@ -31,13 +31,32 @@ If you see anyone using this tool irresponsibly, please report the misuse.
 - [httpx](https://www.python-httpx.org/)
 - [hishel](https://hishel.com/)  
 
-## How to use?
+## 🚀 How to use?
 
 ```bash
 pip install git+https://github.com/yam-1111/pupsis.py
 ```
 
 ### Usage example
+
+#### Check if grades in SIS is complete
+
+```python
+from pupsis import PUPSIS
+
+user = PUPSIS(
+    student_number="YYYY-XXXXX-XX-0",  # Replace with your student number i.e 20XX-XXXXX-MN-0
+    student_birthdate="MM/DD/YYYY",   # Replace with your birthdate i.e 1/2/2003
+    password="YourSecurePassword",    # Replace with your password
+)
+
+# this requests grades section on SIS
+grades = user.grades()
+
+print(f"Grade complete: {grades.is_complete()}")
+```
+
+#### Get all the grades from the latest semester
 
 ```python
 # example of getting the latest grades of the student
