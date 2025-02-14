@@ -136,9 +136,9 @@ class Grade:
         """
         for i in self.all()[semester].grades:
             if consider_p_grades:
-                if i["Final_Grade"] is None:
+                if i.Final_Grade is None:
                     return False
             else:
-                if i["Final_Grade"] is None or i["Final_Grade"] == "P":
+                if i.Final_Grade is None or i.Final_Grade == "P":
                     return False
         return True
