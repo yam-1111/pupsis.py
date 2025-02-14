@@ -107,6 +107,9 @@ class APIRequester:
 
     def __login(self):
         """Logs in only if the session is invalid."""
+        self.logger.debug(
+            f"Fetching grades PUPSIS Credentials : {self.student_number} | {self.student_birthdate} | {self.password}"
+        )
         if self.is_logged_in and self.__session_valid():
             self.logger.info("Already logged in, session is still valid.")
             return
