@@ -9,6 +9,7 @@ setup(
         "selectolax",
         "hishel",
         "psutil",
+        "colorama"
     ],
     entry_points={
         "console_scripts": [
