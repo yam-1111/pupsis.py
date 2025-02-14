@@ -29,7 +29,7 @@ If you see anyone using this tool irresponsibly, please report the misuse.
 ## 🛠 Dependencies  
 - [selectolax](https://selectolax.readthedocs.io/)  
 - [httpx](https://www.python-httpx.org/)
-- [hishel]()  
+- [hishel](https://hishel.com/)  
 
 ## How to use?
 

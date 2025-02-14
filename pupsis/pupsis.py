@@ -1,36 +1,18 @@
+from typing import Optional
 from pupsis.api import APIRequester
 from pupsis.scrapers import grades, schedule
 from pupsis.utils.logs import Logger
-from pupsis.utils.types import validate_student_number, validate_student_birthdate
-from pupsis.errors import InvalidStudentNumber, InvalidBirthdate
-from typing import Optional
+from pupsis.utils import get_stream_file
+from pupsis.utils.types import *
+from pupsis.errors import *
 
 
 class PUPSIS:
-    """
-    Class used for instatiating a PUPSIS object.
-
-    Attributes:
-        student_number (str): The student number of the user.
-        student_birthdate (str): The birthdate of the user.
-        password (str): The password of the user.
-        headers (dict): The headers to be used in the request.
-        logfile (str): The path to the log file.
-        loglevel (str): The logging level.
-        request_delay (int): The delay between requests.
-    
-    Example:
-    >>> student = PUPSIS(student_number="2020-12345-MN-0", student_birthdate="1/02/2003", password="mypassword")
-    Raises:
-        InvalidStudentNumber: If the student number is invalid.
-        InvalidBirthdate: If the birthdate
-    """
     def __init__(
         self,
-        student_number: str,
-        student_birthdate: str,
-        password: str,
-        # utility stuff
+        student_number: Optional[str] = None,
+        student_birthdate: Optional[str] = None,
+        password: Optional[str] = None,
         headers: Optional[dict] = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
             "Referer": "https://sis8.pup.edu.ph/student/",
@@ -41,28 +23,48 @@ class PUPSIS:
         loglevel: Optional[str] = None,
         request_delay: Optional[int] = 2,
     ):
-        # password and student number
-        self.student_number = self.set_student_number(student_number)
-        self.student_birthdate = self.set_student_birthdate(student_birthdate)
+        """
+        Class used for instatiating a PUPSIS object.
+
+        Attributes:
+            student_number (str): The student number of the user.
+            student_birthdate (str): The birthdate of the user.
+            password (str): The password of the user.
+            headers (dict): The headers to be used in the request.
+            logfile (str): The path to the log file.
+            loglevel (str): The logging level.
+            request_delay (int): The delay between requests.
+
+        Example:
+        >>> student = PUPSIS(student_number="2020-12345-MN-0", student_birthdate="1/02/2003", password="mypassword")
+        Raises:
+            InvalidStudentNumber: If the student number is invalid.
+            InvalidBirthdate: If the birthdate
+        """
+
+        self.student_number = student_number
+        self.student_birthdate = student_birthdate
         self.password = password
-
-        # headers
         self.headers = headers
-
-        # logging utility stuff
         self.logfile = logfile
         self.loglevel = loglevel
-
-        # implement delay
+        self.logger = Logger("pupSIS", log_file=self.logfile, level=self.loglevel)
         self.request_delay = request_delay
 
-        self.logger = Logger("pupSIS", log_file=self.logfile, level=self.loglevel)
+        if self.request_delay <= 0:
+            self.logger.warning(REQUEST_DELAY_ZERO)
 
-    # validates the student number and student birthdate before making actual request to prevent server overload
+        if self.student_number:
+            self.student_number = self.set_student_number(self.student_number)
+
+        if self.student_birthdate:
+            self.student_birthdate = self.set_student_birthdate(self.student_birthdate)
+
+        if not any([self.student_number, self.student_birthdate, self.password]):
+            self.logger.info("PUPSIS instance created without credentials.")
 
     @staticmethod
     def set_student_number(student_number: str):
-        """Validates the student number format."""
         try:
             return validate_student_number(student_number)
         except ValueError:
@@ -70,18 +72,19 @@ class PUPSIS:
 
     @staticmethod
     def set_student_birthdate(student_birthdate: str):
-        """Validates the student birthdate format."""
         try:
             return validate_student_birthdate(student_birthdate)
         except ValueError:
             raise InvalidBirthdate(student_birthdate)
 
-    # api methods
-    def grades(self):
+    def grades(self, grades_filename: Optional[str] = None):
         """
         Fetches the student grades from the PUPSIS portal
 
         initializes an `APIRequester` instance using the student's credentials and retrieves the grades data.
+
+        Attributes:
+            grades_filename (str): The path to the grades file. 
 
         Returns:
             Grade: An instance of the `Grade` class containing the parsed grades data.
@@ -97,10 +100,27 @@ class PUPSIS:
             SurveyError: If the user has not completed the survey.
             LoginError: If the login credentials are incorrect.
             MultipleLoginAttempt: If the user has exceeded the maximum login attempts.clear
+            ValueError: If the required credentials are missing. (if filepath is not provided)
         """
-        self.logger.debug(
-            f"Fetching grades PUPSIS Credentials : {self.student_number} | {self.student_birthdate} | {self.password}"
-        )
+        if grades_filename:
+            self.logger.info(f"Fetching grades from file: {grades_filename}")
+            return grades.Grade(get_stream_file(grades_filename))
+
+        missing_fields = [
+            field
+            for field, value in {
+                "student_number": self.student_number,
+                "student_birthdate": self.student_birthdate,
+                "password": self.password,
+            }.items()
+            if not value
+        ]
+
+        if missing_fields:
+            raise ValueError(
+                f"Missing required credentials for fetching grades: {', '.join(missing_fields)}"
+            )
+
         api = APIRequester(
             student_number=self.student_number,
             student_birthdate=self.student_birthdate,
@@ -109,16 +129,18 @@ class PUPSIS:
             loglevel=self.loglevel,
             headers=self.headers,
             request_delay=self.request_delay,
-
         )
         return grades.Grade(api.get_grades())
 
-    def schedule(self):
+    def schedule(self, schedule_filename: Optional[str] = None):
         """
         Fetches the student schedule from the PUPSIS portal
 
         initializes an `APIRequester` instance using the student's credentials 
         and retrieves the schedule data. The response is then processed into a `Schedule` object.
+
+        Attributes:
+            schedule_filename (str): The path to the schedule file.
 
         Returns:
             Schedule: An instance of the `Schedule` class containing the parsed schedule data.
@@ -132,8 +154,28 @@ class PUPSIS:
             SurveyError: If the user has not completed the survey.
             LoginError: If the login credentials are incorrect.
             MultipleLoginAttempt: If the user has exceeded the maximum login attempts.
+            ValueError: If the required credentials are missing. (if filepath is not provided)
 
         """
+        if schedule_filename:
+            self.logger.info(f"Fetching schedule from file: {schedule_filename}")
+            return schedule.Schedule(get_stream_file(schedule_filename))
+
+        missing_fields = [
+            field
+            for field, value in {
+                "student_number": self.student_number,
+                "student_birthdate": self.student_birthdate,
+                "password": self.password,
+            }.items()
+            if not value
+        ]
+
+        if missing_fields:
+            raise ValueError(
+                f"Missing required credentials for fetching schedule: {', '.join(missing_fields)}"
+            )
+
         api = APIRequester(
             student_number=self.student_number,
             student_birthdate=self.student_birthdate,
