@@ -5,7 +5,7 @@ from os import getenv
 from dotenv import load_dotenv
 
 
-
+# optional to use .env file, can be hardcoded
 load_dotenv()
 pupsis = PUPSIS(
     # PUP student number 20xx-xxxxx-XX-0 i.e 2024-12345-MN-0
@@ -17,7 +17,8 @@ pupsis = PUPSIS(
     # set logging level details i.e None, "DEBUG", "INFO", "WARNING", "ERROR"
     # default = None
     loglevel=getenv("LOG_LEVEL"),
-    request_delay=0
+    # add custom delay between requests by default = 2
+    request_delay=int(getenv("REQUEST_DELAY"))
 )
 latest_grades = pupsis.grades().latest()
 sched = pupsis.schedule()
