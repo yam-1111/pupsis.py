@@ -26,3 +26,5 @@ sched = pupsis.schedule()
 print(sched.__dict__)
 for x in latest_grades.grades:
     print(f"{x.Faculty_Name} - {x.Subject_Code} - {x.Description}  - {x.Final_Grade} {x.Grade_Status}")
+
+print(f"Total Units: {latest_grades.total_units}")

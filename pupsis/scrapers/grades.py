@@ -21,6 +21,33 @@ class GradesWrapper:
             else:
                 setattr(self, key, value)
 
+    @property
+    def total_units(self):
+        """Calculates the total units of the semester grades.
+
+        Returns:
+            int: The total units of the semester grades.
+        """
+        return sum([int(float(i.Units)) for i in self.grades])
+
+    def is_complete(self, consider_p_grades=False):
+        """Checks if the final grades are complete.
+
+        Attributes:
+            consider_p_grades (bool): Whether to consider 'P' as a complete grade.
+
+        Returns:
+            bool: True if the grades are complete, False otherwise.
+        """
+        for i in self.grades:
+            if consider_p_grades:
+                if i.Final_Grade is None:
+                    return False
+            else:
+                if i.Final_Grade is None or i.Final_Grade == "P":
+                    return False
+        return True
+
     def __repr__(self):
         return f"<{self.Semester} term {self.Academic_Year}>"
 
@@ -123,22 +150,3 @@ class Grade:
             GradesWrapper: An instance of the GradesWrapper class containing the latest semester grades
         """
         return GradesWrapper(**self.convert_to_dict[0])
-    
-    def is_complete(self, consider_p_grades=False, semester=0):
-        """Checks if the final grades from the latest semester in pupSIS are complete.
-
-        Attributes:
-            consider_p_grades (bool): Whether to consider 'P' as a complete grade.
-            semester (int): The semester to check (default is 0 for the latest semester).
-
-        Returns:
-            bool: True if the grades are complete, False otherwise.
-        """
-        for i in self.all()[semester].grades:
-            if consider_p_grades:
-                if i.Final_Grade is None:
-                    return False
-            else:
-                if i.Final_Grade is None or i.Final_Grade == "P":
-                    return False
-        return True
