@@ -20,15 +20,13 @@ pupsis = PUPSIS(
     # add custom delay between requests by default = 2
     request_delay=int(getenv("REQUEST_DELAY"))
 )
-latest_grades = pupsis.grades().latest()
+# fetch the academic year that has complete grades
+latest_grades = pupsis.grades().latest(has_complete_grades=True)
+
 sched = pupsis.schedule()
-
-#
-#print(sched.__dict__)
-#
-
 
 for x in latest_grades.grades:
     print(f"{x.Faculty_Name} - {x.Subject_Code} - {x.Description}  - {x.Final_Grade} {x.Grade_Status}")
 
 print(f"Total Units: {latest_grades.total_units}")
+print(f"GPA : {latest_grades.calculate_gpa(exclude_nstp_and_nonnumeric=True)}")

@@ -5,19 +5,22 @@ import re
 
 class GradeEntry:
     """Wraps a grade entry dictionary into an object with attribute access."""
+
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
     def __repr__(self):
         return f"<{self.Subject_Code}>"
 
+
 class GradesWrapper:
     """Wraps the dictionary into attributes, including grades as objects."""
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             if key == "grades" and isinstance(value, list):
                 # Convert each dict to GradeEntry
-                self.grades = [GradeEntry(**grade) for grade in value]  
+                self.grades = [GradeEntry(**grade) for grade in value]
             else:
                 setattr(self, key, value)
 
@@ -48,9 +51,49 @@ class GradesWrapper:
                     return False
         return True
 
+    def calculate_gpa(self, exclude_nstp_and_nonnumeric=False, round_off=0):
+        """Calculates the GPA of the semester grades.
+
+        Attributes:
+            exclude_nstp_and_nonnumeric (bool): Whether to exclude NSTP and non-numeric grades.
+            round_off (int): Determines how the GPA should be rounded.
+                            0 = No rounding (full precision),
+                            1 = Round to 2 decimal places,
+                            Else = Round to nearest whole number.
+        Returns:
+            float: The GPA of the semester grades.
+        """
+        EXCLUDE_SUBJECTS = ["CWTS", "ROTC", "PATHFIT"]
+
+        # Filter the subjects properly
+        filtered_grades = []
+
+        for i in self.grades:
+            if exclude_nstp_and_nonnumeric:
+                if not (i.Subject_Code.startswith(tuple(EXCLUDE_SUBJECTS))):
+                    filtered_grades.append(i)
+            else:
+                if i.Final_Grade is not None:
+                    filtered_grades.append(i)
+
+        # Step 2: Compute total grade points and total units
+        total_grade_points = sum(
+            float(i.Final_Grade) * float(i.Units) for i in filtered_grades
+        )
+        total_units = sum(float(i.Units) for i in filtered_grades)
+
+        # Debugging output
+        print(
+            f"Filtered Total Units: {total_units}, Total Grade Points: {total_grade_points}"
+        )
+
+        gpa = total_grade_points / total_units if total_units > 0 else 0
+        if round_off == 0:
+            return gpa  
+        else:
+            return round(gpa, round_off+1) 
     def __repr__(self):
         return f"<{self.Semester} term {self.Academic_Year}>"
-
 
 
 class Grade:
@@ -64,6 +107,7 @@ class Grade:
         all(): Returns all semester grades.
 
     """
+
     def __init__(self, html_data: str):
         self.html_data = html_data
 
@@ -91,7 +135,9 @@ class Grade:
                 if secondary.attrs["class"] == "card-body":
                     for index, divs in enumerate(secondary.iter()):
                         if divs.css("dt") and divs.css("dd"):
-                            head = [(x.text()).replace(" ", "_") for x in divs.css("dt")]
+                            head = [
+                                (x.text()).replace(" ", "_") for x in divs.css("dt")
+                            ]
                             tail = [x.text() for x in divs.css("dd")]
                             temp_infos.update(dict(zip(head, tail)))
                         else:
@@ -99,11 +145,23 @@ class Grade:
                                 for x in table.iter():
                                     if x.tag == "thead":
                                         for j in x.iter():
-                                            t_head = [(k.text().replace(" ", "_")) for k in j.iter()]
+                                            t_head = [
+                                                (k.text().replace(" ", "_"))
+                                                for k in j.iter()
+                                            ]
                                     if x.tag == "tbody":
                                         for j in x.iter():
-                                            t_rows = [k.text() if k.text(strip=True) != "" else None for k in j.iter()]
-                                            temp_grades.append(dict(zip(t_head, t_rows)))
+                                            t_rows = [
+                                                (
+                                                    k.text()
+                                                    if k.text(strip=True) != ""
+                                                    else None
+                                                )
+                                                for k in j.iter()
+                                            ]
+                                            temp_grades.append(
+                                                dict(zip(t_head, t_rows))
+                                            )
 
                             if temp_infos:
                                 self.infos.append(temp_infos)
@@ -112,12 +170,11 @@ class Grade:
                                 self.grades.append(temp_grades)
 
                 if secondary.attrs["class"] == "card-header":
-                    pattern = r'School Year (\d{4}).*?(First|Second|Summer)'
+                    pattern = r"School Year (\d{4}).*?(First|Second|Summer)"
                     match = re.search(pattern, secondary.text(strip=True))
-                    self.header.append({
-                        "Academic_Year": match.group(1),
-                        "Semester": match.group(2)
-                    })
+                    self.header.append(
+                        {"Academic_Year": match.group(1), "Semester": match.group(2)}
+                    )
 
     @property
     def convert_to_dict(self):
@@ -128,7 +185,7 @@ class Grade:
         """
         combined_data = []
         combined_data = self.header.copy()
-        for index, i in enumerate(self.infos): 
+        for index, i in enumerate(self.infos):
             for key, item in i.items():
                 combined_data[index].update({key: item})
                 combined_data[index].update({"grades": self.grades[index]})
@@ -143,10 +200,18 @@ class Grade:
         datas = [GradesWrapper(**dict_obj) for dict_obj in self.convert_to_dict]
         return datas
 
-    def latest(self):
+    def latest(self, has_complete_grades=False):
         """Retrieves the latest academic semester grades.
+
+        Attributes:
+            has_complete_grades (bool): Fetch the latest semester grades with complete grades only.
 
         Returns:
             GradesWrapper: An instance of the GradesWrapper class containing the latest semester grades
         """
-        return GradesWrapper(**self.convert_to_dict[0])
+        if has_complete_grades:
+            for i in self.convert_to_dict:
+                if GradesWrapper(**i).is_complete():
+                    return GradesWrapper(**i)
+        else:
+            return GradesWrapper(**self.convert_to_dict[0])
