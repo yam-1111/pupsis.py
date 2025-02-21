@@ -28,5 +28,6 @@ sched = pupsis.schedule()
 for x in latest_grades.grades:
     print(f"{x.Faculty_Name} - {x.Subject_Code} - {x.Description}  - {x.Final_Grade} {x.Grade_Status}")
 
+
 print(f"Total Units: {latest_grades.total_units}")
-print(f"GPA : {latest_grades.calculate_gpa(exclude_nstp_and_nonnumeric=True)}")
+print(f"GPA : {latest_grades.calculate_gpa(exclude_nstp_and_nonnumeric=True, round_off=1)}")
